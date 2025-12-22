@@ -1,0 +1,208 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  
+  /* Navy Slate Professional Theme */
+  --color-habit-mauve: #1B3C53;    /* Dark navy blue */
+  --color-habit-rose: #456882;     /* Medium slate blue */
+  --color-habit-cream: #E3E3E3;    /* Light gray */
+  --color-habit-light: #FFFFFF;    /* Pure white */
+  
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+}
+
+:root {
+  --radius: 0.625rem;
+  
+  --habit-mauve: #1B3C53;
+  --habit-rose: #456882;
+  --habit-cream: #E3E3E3;
+  --habit-light: #FFFFFF;
+  
+  --background: #FFFFFF;        /* Pure white background */
+  --foreground: #1B3C53;        /* Navy text */
+  --card: #FFFFFF;
+  --card-foreground: #1B3C53;
+  --popover: #FFFFFF;
+  --popover-foreground: #1B3C53;
+  --primary: #456882;           /* Slate blue primary */
+  --primary-foreground: #FFFFFF;
+  --secondary: #E3E3E3;         /* Light gray */
+  --secondary-foreground: #1B3C53;
+  --muted: #E3E3E3;
+  --muted-foreground: #5A7B92;
+  --accent: #456882;
+  --accent-foreground: #FFFFFF;
+  --destructive: #EF4444;
+  --border: #D1D5DB;
+  --input: #E3E3E3;
+  --ring: #456882;
+  --chart-1: #456882;
+  --chart-2: #1B3C53;
+  --chart-3: #234C6A;
+  --chart-4: #E3E3E3;
+  --chart-5: #5A7B92;
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #1B3C53;
+  --sidebar-primary: #1B3C53;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #456882;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #D1D5DB;
+  --sidebar-ring: #456882;
+}
+
+.dark {
+  --background: #0F1F2E;
+  --foreground: #E3E3E3;
+  --card: #1B3C53;
+  --card-foreground: #E3E3E3;
+  --popover: #1B3C53;
+  --popover-foreground: #E3E3E3;
+  --primary: #5A7B92;
+  --primary-foreground: #FFFFFF;
+  --secondary: #234C6A;
+  --secondary-foreground: #E3E3E3;
+  --muted: #234C6A;
+  --muted-foreground: #9CA3AF;
+  --accent: #5A7B92;
+  --accent-foreground: #FFFFFF;
+  --destructive: #F87171;
+  --border: #2A4A5E;
+  --input: #234C6A;
+  --ring: #5A7B92;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply text-foreground;
+    background-color: var(--habit-light);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  }
+}
+
+.bg-habit-mauve { background-color: var(--habit-mauve) !important; }
+.bg-habit-rose { background-color: var(--habit-rose) !important; }
+.bg-habit-cream { background-color: var(--habit-cream) !important; }
+.bg-habit-light { background-color: var(--habit-light) !important; }
+.text-habit-mauve { color: var(--habit-mauve) !important; }
+.text-habit-rose { color: var(--habit-rose) !important; }
+.border-habit-mauve { border-color: var(--habit-mauve) !important; }
+.border-habit-rose { border-color: var(--habit-rose) !important; }
+.border-habit-cream { border-color: var(--habit-cream) !important; }
+.hover\:bg-habit-rose:hover { background-color: var(--habit-rose) !important; }
+.hover\:bg-habit-mauve:hover { background-color: var(--habit-mauve) !important; }
+.hover\:bg-habit-cream:hover { background-color: var(--habit-cream) !important; }
+.hover\:border-habit-rose:hover { border-color: var(--habit-rose) !important; }
+.hover\:text-habit-mauve:hover { color: var(--habit-mauve) !important; }
+
+.glass {
+  background: rgba(227, 227, 227, 0.4);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(69, 104, 130, 0.2);
+}
+
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 25px -5px rgba(27, 60, 83, 0.15), 0 10px 10px -5px rgba(27, 60, 83, 0.08);
+}
+
+.btn-press:active {
+  transform: scale(0.98);
+}
+
+.shadow-brown-lg {
+  box-shadow: 0 10px 15px -3px rgba(27, 60, 83, 0.12), 0 4px 6px -2px rgba(27, 60, 83, 0.06);
+}
+
+.solid-border-tan {
+  border: 2px solid #D1D5DB;
+  border-radius: 1rem;
+}
+
+.gradient-border {
+  border: 2px solid #456882;
+  border-radius: 1rem;
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #FFFFFF 25%, #E3E3E3 50%, #FFFFFF 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+/* Add these animation utilities */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.hover\:scale-102:hover {
+  transform: scale(1.02);
+}
+
+.hover\:scale-105:hover {
+  transform: scale(1.05);
+}
+
+.hover\:scale-110:hover {
+  transform: scale(1.10);
+}
