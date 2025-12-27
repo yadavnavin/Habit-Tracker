@@ -2,6 +2,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { Sidebar } from '@/components/common/Sidebar';
 import { Navbar } from '@/components/common/Navbar';
@@ -9,44 +10,66 @@ import { OverviewDashboard } from '@/components/overview/OverviewDashboard';
 import { WeekView } from '@/components/schedule/WeekView';
 import { MonthView } from '@/components/schedule/MonthView';
 import { HabitTracker } from '@/components/habits/HabitTracker';
+import { ReportsView } from '@/components/reports/ReportsView';
 import { DataManager } from '@/components/settings/DataManager';
-import { Card } from '@/components/ui/card';
-import { TrendingUp } from 'lucide-react';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
 export function AppLayout() {
   const { view } = useStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA]"> {/* Light gray background */}
-      {/* Top Navbar */}
-      <Navbar />
+    <div className="min-h-screen bg-gray-50">
+      {/* Navbar - Fixed at top */}
+      <Navbar 
+        onMenuClick={() => setMobileMenuOpen(true)} 
+        onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
 
-      {/* Sidebar + Main Content */}
+      {/* Main Container - Below navbar */}
       <div className="flex">
-        {/* Sidebar */}
-        <Sidebar />
+        {/* Desktop Sidebar - Hidden on mobile */}
+        <div className="hidden lg:block">
+          <Sidebar collapsed={sidebarCollapsed} />
+        </div>
 
-        {/* Main Content Area with rounded corners and shadow */}
-        <main className="flex-1 overflow-x-hidden ml-4 mt-4 mr-4 mb-4 bg-white rounded-3xl shadow-sm">
-          <div className="p-8">
+        {/* Mobile Sidebar (Sheet) */}
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="left" className="p-0 w-72 pt-0">
+            {/* Add VisuallyHidden SheetTitle for accessibility */}
+            <VisuallyHidden>
+              <SheetTitle>Navigation Menu</SheetTitle>
+            </VisuallyHidden>
+            
+            <div className="h-full overflow-y-auto">
+              <Sidebar onNavigate={() => setMobileMenuOpen(false)} />
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Main Content Area */}
+        <main 
+          className={`flex-1 min-h-screen transition-all duration-300 ${
+            sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-0'
+          }`}
+        >
+          <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
             {view === 'overview' && <OverviewDashboard />}
             {view === 'week' && <WeekView />}
             {view === 'month' && <MonthView />}
             {view === 'habits' && <HabitTracker />}
+            {view === 'reports' && <ReportsView />}
             
-            {/* Stats View - Placeholder */}
-            {view === 'stats' && (
-              <Card className="p-12 text-center glass rounded-3xl shadow-brown-lg border border-habit-rose/30">
-                <TrendingUp className="w-16 h-16 mx-auto text-habit-mauve opacity-50 mb-4" />
-                <h3 className="text-2xl font-bold text-habit-mauve">Analytics Dashboard</h3>
-                <p className="text-gray-600 mt-2">Track your progress with detailed insights</p>
-              </Card>
-            )}
-            
-            {/* Settings View */}
             {view === 'settings' && (
               <div className="space-y-6">
-                <h2 className="text-3xl font-bold text-habit-mauve mb-6">Settings</h2>
+                <div>
+                  <h2 className="text-3xl font-bold text-[#1B3C53]">Settings</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Manage your app preferences and data
+                  </p>
+                </div>
                 <DataManager />
               </div>
             )}

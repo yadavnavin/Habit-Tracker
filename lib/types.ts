@@ -9,9 +9,10 @@ export interface Task {
   date: string;
   time: string;
   completed: boolean;
-  frequency: 'once' | 'daily' | 'weekly' | 'monthly'; // ✅ Add this
-  priority?: 'low' | 'medium' | 'high';
-  category?: string;
+  frequency: 'once' | 'daily' | 'weekdays' | 'weekends' | 'weekly' | 'custom' | 'monthly';
+  selectedDays?: number[]; // ✅ For custom frequency
+  priority?: 'low' | 'medium' | 'high'; // ✅ New field
+  category?: string; // ✅ New field
   createdAt?: string;
 }
 

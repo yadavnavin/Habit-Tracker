@@ -1,58 +1,64 @@
-// app/lib/store.ts
-
-'use client';
+// lib/store.ts
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Task, Habit, AppState } from './types';
+import { Task, Habit } from './types';
 
-interface StoreState extends AppState {
-  // Task actions
-  addTask: (task: Omit<Task, 'id'>) => void;
+interface StoreState {
+  // View state - ADD 'week', 'month', 'reports'
+  view: 'overview' | 'tasks' | 'habits' | 'schedule' | 'settings' | 'week' | 'month' | 'reports';
+  setView: (view: StoreState['view']) => void;
+
+  // Date state
+  selectedDate: string;
+  setSelectedDate: (date: string) => void;
+
+  // Tasks
+  tasks: Task[];
+  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
   updateTask: (id: string, task: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   toggleTaskCompletion: (id: string) => void;
+  getTasksForDate: (date: string) => Task[];
   getTodayTasks: () => Task[];
-  getTasksForDate: (date: string) => Task[]; // ✅ New method for recurring tasks
 
-  // Habit actions
-  addHabit: (habit: Habit) => void;
+  // Habits
+  habits: Habit[];
+  addHabit: (habit: Omit<Habit, 'id' | 'streak' | 'completedDates' | 'createdAt'>) => void;
   updateHabit: (id: string, habit: Partial<Habit>) => void;
   deleteHabit: (id: string) => void;
-  toggleHabitCompletion: (id: string, date: string) => void;
-  getHabitStats: (id: string) => { streak: number; completed: number; percentage: number };
-
-  // View actions
-  setSelectedDate: (date: string) => void;
-  setView: (view: AppState['view']) => void;
-
-  // Stats actions
-  calculateStats: () => void;
+  toggleHabit: (habitId: string, date: string) => void;
+  
+  // Streak calculations
+  calculateCurrentStreak: (habitId: string) => number;
+  getLongestStreak: (habitId: string) => number;
+  updateAllStreaks: () => void;
 }
 
-// ✅ Helper function to check if task should appear on date
+// Helper function to check if task should appear on date
 const shouldShowTaskOnDate = (task: Task, targetDate: string): boolean => {
   const taskDate = new Date(task.date);
   const checkDate = new Date(targetDate);
   
-  // Task must start on or before the target date
   if (taskDate > checkDate) return false;
+
+  const targetDay = checkDate.getDay();
 
   switch (task.frequency) {
     case 'daily':
-      return true; // Show every day after start date
-
+      return true;
+    case 'weekdays':
+      return targetDay >= 1 && targetDay <= 5;
+    case 'weekends':
+      return targetDay === 0 || targetDay === 6;
     case 'weekly':
-      // Show on same day of week as original task
-      return taskDate.getDay() === checkDate.getDay();
-
+      return taskDate.getDay() === targetDay;
+    case 'custom':
+      return task.selectedDays?.includes(targetDay) || false;
     case 'monthly':
-      // Show on same date each month
       return taskDate.getDate() === checkDate.getDate();
-
     case 'once':
     default:
-      // Show only on exact date
       return task.date === targetDate;
   }
 };
@@ -60,186 +66,198 @@ const shouldShowTaskOnDate = (task: Task, targetDate: string): boolean => {
 export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
+      // Initial state
+      view: 'overview',
+      selectedDate: new Date().toISOString().split('T')[0],
       tasks: [],
       habits: [],
-      selectedDate: new Date().toISOString().split('T')[0],
-      view: 'overview',
-      stats: [],
 
-      // Task Actions
-      addTask: (taskData) =>
+      // View actions
+      setView: (view) => set({ view }),
+
+      // Date actions
+      setSelectedDate: (date) => set({ selectedDate: date }),
+
+      // Task actions
+      addTask: (task) =>
         set((state) => ({
           tasks: [
             ...state.tasks,
             {
-              ...taskData,
-              id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-              frequency: taskData.frequency || 'once', // ✅ Default to 'once'
-              completed: false,
-            } as Task,
+              ...task,
+              id: crypto.randomUUID(),
+              createdAt: new Date().toISOString(),
+            },
           ],
         })),
 
-      updateTask: (id: string, updates: Partial<Task>) =>
+      updateTask: (id, updatedTask) =>
         set((state) => ({
           tasks: state.tasks.map((task) =>
-            task.id === id ? { ...task, ...updates } : task
+            task.id === id ? { ...task, ...updatedTask } : task
           ),
         })),
 
-      deleteTask: (id: string) =>
+      deleteTask: (id) =>
         set((state) => ({
           tasks: state.tasks.filter((task) => task.id !== id),
         })),
 
-      toggleTaskCompletion: (id: string) =>
+      toggleTaskCompletion: (id) =>
         set((state) => ({
           tasks: state.tasks.map((task) =>
             task.id === id ? { ...task, completed: !task.completed } : task
           ),
         })),
 
-      getTodayTasks: () => {
-        const state = get();
-        return state.tasks.filter((task) => shouldShowTaskOnDate(task, state.selectedDate));
-      },
-
-      // ✅ New method: Get tasks for any date (handles recurring tasks)
-      getTasksForDate: (date: string) => {
+      getTasksForDate: (date) => {
         const state = get();
         return state.tasks.filter((task) => shouldShowTaskOnDate(task, date));
       },
 
-      // Habit Actions
-      addHabit: (habit: Habit) =>
+      getTodayTasks: () => {
+        const state = get();
+        const today = state.selectedDate;
+        return state.tasks.filter((task) => shouldShowTaskOnDate(task, today));
+      },
+
+      // Habit actions
+      addHabit: (habit) =>
         set((state) => ({
-          habits: [...state.habits, habit],
+          habits: [
+            ...state.habits,
+            {
+              ...habit,
+              id: crypto.randomUUID(),
+              streak: 0,
+              completedDates: [],
+              createdAt: new Date().toISOString(),
+            },
+          ],
         })),
 
-      updateHabit: (id: string, updates: Partial<Habit>) =>
+      updateHabit: (id, updatedHabit) =>
         set((state) => ({
           habits: state.habits.map((habit) =>
-            habit.id === id ? { ...habit, ...updates } : habit
+            habit.id === id ? { ...habit, ...updatedHabit } : habit
           ),
         })),
 
-      deleteHabit: (id: string) =>
+      deleteHabit: (id) =>
         set((state) => ({
           habits: state.habits.filter((habit) => habit.id !== id),
         })),
 
-      toggleHabitCompletion: (id: string, date: string) =>
-        set((state) => ({
-          habits: state.habits.map((habit) => {
-            if (habit.id === id) {
+      toggleHabit: (habitId, date) => {
+        set((state) => {
+          const updatedHabits = state.habits.map((habit) => {
+            if (habit.id === habitId) {
               const isCompleted = habit.completedDates.includes(date);
               const newCompletedDates = isCompleted
                 ? habit.completedDates.filter((d) => d !== date)
                 : [...habit.completedDates, date].sort();
 
-              // Calculate streak properly
-              let newStreak = 0;
-              if (newCompletedDates.length > 0) {
-                const sortedDates = newCompletedDates.sort((a, b) => 
-                  new Date(b).getTime() - new Date(a).getTime()
-                );
-                
-                const today = new Date().toISOString().split('T')[0];
-                const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-                
-                // Check if most recent completion is today or yesterday
-                if (sortedDates[0] === today || sortedDates[0] === yesterday) {
-                  newStreak = 1;
-                  
-                  // Count consecutive days backwards
-                  for (let i = 0; i < sortedDates.length - 1; i++) {
-                    const currentDate = new Date(sortedDates[i]);
-                    const nextDate = new Date(sortedDates[i + 1]);
-                    const diffDays = Math.floor((currentDate.getTime() - nextDate.getTime()) / 86400000);
-                    
-                    if (diffDays === 1) {
-                      newStreak++;
-                    } else {
-                      break;
-                    }
-                  }
-                }
-              }
-
               return {
                 ...habit,
                 completedDates: newCompletedDates,
-                lastCompletedDate: newCompletedDates.length > 0 
-                  ? newCompletedDates[newCompletedDates.length - 1] 
-                  : '',
-                streak: newStreak,
               };
             }
             return habit;
-          }),
-        })),
+          });
 
-      getHabitStats: (id: string) => {
-        const state = get();
-        const habit = state.habits.find((h) => h.id === id);
-        if (!habit) return { streak: 0, completed: 0, percentage: 0 };
+          return { habits: updatedHabits };
+        });
 
-        const completed = habit.completedDates.length;
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const recentCompleted = habit.completedDates.filter(
-          (d) => new Date(d) >= thirtyDaysAgo
-        ).length;
-        const percentage = Math.round((recentCompleted / 30) * 100);
-
-        return {
-          streak: habit.streak,
-          completed,
-          percentage,
-        };
+        setTimeout(() => {
+          set((state) => ({
+            habits: state.habits.map((habit) =>
+              habit.id === habitId
+                ? { ...habit, streak: get().calculateCurrentStreak(habitId) }
+                : habit
+            ),
+          }));
+        }, 0);
       },
 
-      // View Actions
-      setSelectedDate: (date: string) =>
-        set(() => ({
-          selectedDate: date,
-        })),
-
-      setView: (view: AppState['view']) =>
-        set(() => ({
-          view,
-        })),
-
-      // Stats Actions
-      calculateStats: () => {
+      // Streak calculations
+      calculateCurrentStreak: (habitId) => {
         const state = get();
-        const today = state.selectedDate;
-        const todayTasks = state.getTasksForDate(today); // ✅ Use new method
-        const todayHabits = state.habits;
+        const habit = state.habits.find((h) => h.id === habitId);
+        if (!habit || habit.completedDates.length === 0) return 0;
 
-        const tasksCompleted = todayTasks.filter((t) => t.completed).length;
-        const habitsCompleted = todayHabits.filter((h) =>
-          h.completedDates.includes(today)
-        ).length;
+        const sortedDates = [...habit.completedDates].sort();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        let streak = 0;
+        let checkDate = new Date(today);
 
-        set((state) => ({
-          stats: [
-            ...state.stats,
-            {
-              date: today,
-              tasksCompleted,
-              tasksTotal: todayTasks.length,
-              habitsCompleted,
-              habitsTotal: todayHabits.length,
-              completionRate:
-                (tasksCompleted + habitsCompleted) / (todayTasks.length + todayHabits.length) || 0,
-            },
-          ],
-        }));
+        const todayStr = checkDate.toISOString().split('T')[0];
+        if (sortedDates.includes(todayStr)) {
+          streak = 1;
+        } else {
+          checkDate.setDate(checkDate.getDate() - 1);
+          const yesterdayStr = checkDate.toISOString().split('T')[0];
+          if (!sortedDates.includes(yesterdayStr)) {
+            return 0;
+          }
+          streak = 1;
+        }
+
+        while (true) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          const dateStr = checkDate.toISOString().split('T')[0];
+          
+          if (sortedDates.includes(dateStr)) {
+            streak++;
+          } else {
+            break;
+          }
+        }
+
+        return streak;
+      },
+
+      getLongestStreak: (habitId) => {
+        const state = get();
+        const habit = state.habits.find((h) => h.id === habitId);
+        if (!habit || habit.completedDates.length === 0) return 0;
+
+        const sortedDates = [...habit.completedDates].sort();
+        let longestStreak = 1;
+        let currentStreak = 1;
+
+        for (let i = 1; i < sortedDates.length; i++) {
+          const prevDate = new Date(sortedDates[i - 1]);
+          const currDate = new Date(sortedDates[i]);
+          
+          const diffTime = currDate.getTime() - prevDate.getTime();
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays === 1) {
+            currentStreak++;
+            longestStreak = Math.max(longestStreak, currentStreak);
+          } else {
+            currentStreak = 1;
+          }
+        }
+
+        return longestStreak;
+      },
+
+      updateAllStreaks: () => {
+        set((state) => {
+          const updatedHabits = state.habits.map((habit) => ({
+            ...habit,
+            streak: get().calculateCurrentStreak(habit.id),
+          }));
+          return { habits: updatedHabits };
+        });
       },
     }),
     {
-      name: 'habit-tracker-store',
+      name: 'habit-flow-storage',
+      version: 1,
     }
   )
 );
